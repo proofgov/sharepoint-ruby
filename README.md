@@ -165,3 +165,24 @@ The SPException class contains methods to inspect the query that was made to the
     puts "The request had a body: #{e.request_body}" unless e.request_body.nil?
   end
 ```
+
+# Development
+
+1. First make a PR to fix the bug.
+2. Once the PR is merged make a special commit changing the version number and adding a new Changelog entry.
+
+   i. Update the [version number](https://github.com/proofgov/sharepoint-ruby/blob/master/lib/sharepoint-version.rb).
+    
+   ii. Update the [changelog](https://github.com/proofgov/sharepoint-ruby/blob/master/CHANGELOG.md).
+    > see https://keepachangelog.com/en/1.0.0/ for more info on changelogs.
+    
+    > Optionally add yourself to the list of authors in the [Gem Spec](https://github.com/proofgov/sharepoint-ruby/blob/master/proof-sharepoint-ruby.gemspec)
+
+*If your repo supports it you can replace steps 3 and 4 with `bundle exec rake release`.*
+
+3. Build your new version (in bash console).
+   `gem build sharepoint_api.gemspec`
+
+4. Publish the gem (in bash)
+   `gem push sharepoint_api-1.0.1.gem`
+   > delete the *.gem file afterwards.
