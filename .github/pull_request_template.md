@@ -42,5 +42,3 @@ If deploying a new version:
 2. Publish the gem (in bash)
    `gem push proof-sharepoint-ruby-x.x.x.gem`
    > delete the *.gem file afterwards.
-
-Reminder that deploy instructions are [here](https://github.com/proofgov/proofgov/wiki/Devops-Deploy-steps)
