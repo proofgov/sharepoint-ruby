@@ -1,4 +1,4 @@
-## [1.0.1]
+## [2.0.0]
 * Fix bug around apostrophes in file names for SharePoint Online.
 
 ### Changes
