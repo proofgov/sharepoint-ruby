@@ -139,7 +139,7 @@ module Sharepoint
           raise Sharepoint::SPException.new data, uri, body unless data['error'].nil?
           self.class.make_object_from_response self, data
         rescue JSON::ParserError => e
-          raise SharepointError.new("Exception with body=#{body}, e=#{e.inspect}, #{e.backtrace.inspect}, response=#{result.body_str}")
+          raise SharepointError.new(result.body_str)
         end
       elsif result.status.to_i >= 400
         raise SharepointError.new("#{method.to_s.upcase} #{uri} responded with #{result.status}")
