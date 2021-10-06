@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    proof-sharepoint-ruby (1.0.0)
+    proof-sharepoint-ruby (2.0.0)
       curb (~> 0.8, <= 0.9.10)
 
 GEM
@@ -16,4 +16,4 @@ DEPENDENCIES
   proof-sharepoint-ruby!
 
 BUNDLED WITH
-   2.1.4
+   2.2.4
