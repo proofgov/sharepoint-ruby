@@ -182,6 +182,7 @@ The SPException class contains methods to inspect the query that was made to the
 
 3. Build your new version (in bash console).
    `gem build sharepoint_api.gemspec`
+> NOTE: run `bundle install` and commit the changes to the Gemfile.lock before deploying a new version.
 
 4. Publish the gem (in bash)
    `gem push sharepoint_api-1.0.1.gem`
