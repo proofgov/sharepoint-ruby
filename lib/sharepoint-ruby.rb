@@ -117,25 +117,76 @@ module Sharepoint
       uri        = if uri =~ /^http/ then uri else api_path(uri) end
       arguments  = [ uri ]
       arguments << body if method != :get
-      result = Curl::Easy.send "http_#{method}", *arguments do |curl|
-        curl.headers["Cookie"]          = @session.cookie
-        curl.headers["Accept"]          = "application/json;odata=verbose"
-        if method != :get
-          curl.headers["Content-Type"]    = curl.headers["Accept"]
-          if session.instance_of?(Sharepoint::HttpAuth::Session)
-            curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
-          else
-            curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
-            curl.headers["Authorization"] = "Bearer " + form_digest unless @getting_form_digest == true
+      
+      puts "\n=== Request Details ==="
+      puts "URL: #{uri}"
+      puts "Method: #{method}"
+      puts "Arguments: #{arguments.inspect}"
+      
+      begin
+        result = Curl::Easy.send "http_#{method}", *arguments do |curl|
+          puts "\n=== Curl Configuration ==="
+          
+          # Enable both NTLM and Negotiate
+          curl.http_auth_types = [:ntlm, :negotiate]
+          
+          curl.headers = {
+            "Cookie" => @session.cookie,
+            "Accept" => "application/json;odata=verbose",
+            "Connection" => "close",
+            "User-Agent" => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Cache-Control" => "no-cache"
+          }
+          
+          if method != :get
+            curl.headers["Content-Type"] = curl.headers["Accept"]
+            if session.instance_of?(Sharepoint::HttpAuth::Session)
+              curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
+            elsif session.instance_of?(Sharepoint::TokenAuth::Session)
+              curl.headers["Authorization"] = "Bearer " + session.access_token
+            else
+              curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
+              curl.headers["Authorization"] = "Bearer " + form_digest unless @getting_form_digest == true
+            end
           end
+          
+          puts "\n=== Headers ==="
+          puts curl.headers.inspect
+          puts "Auth Types: #{curl.http_auth_types.inspect}"
+          
+          curl.verbose = true
+          curl.timeout = 60
+          curl.connect_timeout = 30
+          curl.follow_location = true
+          curl.ssl_verify_peer = false
+          
+          if @session.methods.include? :curl
+            puts "\n=== Session Curl Configuration ==="
+            @session.send :curl, curl
+            puts "Headers after session config: #{curl.headers.inspect}"
+          end
+          
+          block.call curl unless block.nil?
         end
-        curl.verbose = @verbose
-        @session.send :curl, curl unless not @session.methods.include? :curl
-        block.call curl           unless block.nil?
+        
+        puts "\n=== Response ==="
+        puts "Status: #{result.response_code}"
+        puts "Body: #{result.body_str}"
+        
+      rescue Curl::Err::RecvError => e
+        puts "\n=== Curl Receive Error ==="
+        puts "Error: #{e.class} - #{e.message}"
+        raise SharepointError.new("Failed to receive response: #{e.message}")
+      rescue => e
+        puts "\n=== Unexpected Error ==="
+        puts "Error: #{e.class} - #{e.message}"
+        raise e
       end
+
       if !(skip_json || (result.body_str.nil? || result.body_str.empty?))
         begin
           data = JSON.parse result.body_str
+          puts "Data: #{data.inspect}"
           raise Sharepoint::SPException.new data, uri, body unless data['error'].nil?
           self.class.make_object_from_response self, data
         rescue JSON::ParserError => e

@@ -36,15 +36,24 @@ module Sharepoint
     end
 
     attr_accessor :site
+    attr_accessor :oauth_token
 
     def initialize site
       @site = site
     end
 
     def authenticate user, password, sts_url = nil
+      puts "sharepoint-session: Authenticating" 
       sts_url ||= MICROSOFT_STS_URL
       authenticate_to_sts user, password, sts_url
       get_access_token
+    end
+
+    def authenticate_with_token clientid, clientsecret, applicationclientid
+      logger.info "Authenticating with token"
+
+
+
     end
 
     def cookie
@@ -53,6 +62,7 @@ module Sharepoint
 
   private
     def authenticate_to_sts user, password, sts_url
+      puts "Authenticating to STS"
       query    = Soap::Authenticate.new username: user, password: password, url: @site.authentication_path
       response = Curl::Easy.http_post sts_url, query.render rescue raise ConnexionToStsFailed.new
 
@@ -73,6 +83,7 @@ module Sharepoint
     end
 
     def get_access_token
+      puts "Getting access token"
       http = Curl::Easy.http_post @site.authentication_path, @security_token
       @rtFa     = get_cookie_from_header http.header_str, 'rtFa'
       @fed_auth = get_cookie_from_header http.header_str, 'FedAuth'
