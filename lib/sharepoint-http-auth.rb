@@ -21,8 +21,7 @@ module Sharepoint
       end
 
       def curl curb
-        puts "http auth Curb: #{curb.inspect}"
-        curb.http_auth_types = [:ntlm, :gssnegotiate]
+        curb.http_auth_types = :ntlm
         curb.username = @user
         curb.password = @password
       end

@@ -12,7 +12,6 @@ RSpec.describe Sharepoint::Site do
 
   let(:server_url) { 'proofgov.sharepoint.com' }
   let(:site_name) { 'dev-wes' }
-  let(:access_token) { '' }
   let(:client_id) { '' }
   let(:client_secret) { '' }
   let(:application_id) { '' }
@@ -21,7 +20,7 @@ RSpec.describe Sharepoint::Site do
     let(:site) { described_class.new(server_url, site_name) }
     
     it 'authenticates using token' do
-      site.session = Sharepoint::TokenAuth::Session.new(site)
+      site.session = Sharepoint::TokenAuth::Session.new(site,site_name)
       expect { 
         site.session.authenticate_with_token(
           client_id: client_id,
@@ -30,27 +29,12 @@ RSpec.describe Sharepoint::Site do
         )
       }.not_to raise_error
 
-      #puts "Session: #{site.session.inspect}"
       expect(site.session.access_token).to be_a(String)
       expect(site.session.access_token).not_to be_empty
 
-      response = site.query(:get, '')
-      puts "Response: #{response.inspect}"
-      expect(response).not_to be_nil
-      expect(response).to have_key('d')
+      lists = site.query :get, 'lists'
+      expect(lists).not_to be_empty
 
-      # test with get request to lists
-      response = site.query(:get, 'lists')
-
-      expect(response).to have_key('d')  # Should have 'd' key regardless of list count
-      expect(response['d']).to have_key('results')  # Should have 'results' key even if empty
-      
-      lists = site.lists
-      puts "Lists response: #{lists.inspect}"
-      # No assertion about list count - it could be empty or not
-      if lists.any?
-        expect(lists.first).to be_a(Sharepoint::List)
-      end
     end
   end
 end 
