@@ -12,9 +12,9 @@ RSpec.describe Sharepoint::Site do
 
   let(:server_url) { 'proofgov.sharepoint.com' }
   let(:site_name) { 'dev-wes' }
-  let(:client_id) { '' }
-  let(:client_secret) { '' }
-  let(:application_id) { '' }
+  let(:client_id) { ENV['SHAREPOINT_CLIENT_ID'] }
+  let(:client_secret)  { ENV['SHAREPOINT_CLIENT_SECRET'] }
+  let(:application_id)  { ENV['SHAREPOINT_APPLICATION_ID'] }
   
   describe 'Token authentication' do
     let(:site) { described_class.new(server_url, site_name) }
@@ -31,6 +31,9 @@ RSpec.describe Sharepoint::Site do
 
       expect(site.session.access_token).to be_a(String)
       expect(site.session.access_token).not_to be_empty
+
+      lists = site.query :get, 'lists'
+      expect(lists).not_to be_empty
 
       lists = site.query :get, 'lists'
       expect(lists).not_to be_empty

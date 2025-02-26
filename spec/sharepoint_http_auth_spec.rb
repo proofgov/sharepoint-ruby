@@ -8,8 +8,10 @@ RSpec.describe Sharepoint::Site do
 
   let(:server_url) { 'proofgov.sharepoint.com' }
   let(:site_name) { 'sites/dev-wes' }
-  let(:username) { '' }
-  let(:password) { '' }
+  let(:username) { ENV['SHAREPOINT_USERNAME'] }
+  let(:password) { ENV['SHAREPOINT_PASSWORD'] }
+
+ 
   
   describe 'HTTP authentication' do
     let(:site) { described_class.new(server_url, site_name) }
