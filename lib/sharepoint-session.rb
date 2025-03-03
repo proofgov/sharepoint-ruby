@@ -48,13 +48,6 @@ module Sharepoint
       get_access_token
     end
 
-    def authenticate_with_token clientid, clientsecret, applicationclientid
-      logger.info "Authenticating with token"
-
-
-
-    end
-
     def cookie
       "FedAuth=#{@fed_auth};rtFa=#{@rtFa}"
     end
