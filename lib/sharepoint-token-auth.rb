@@ -5,13 +5,16 @@ require 'logger'
 module Sharepoint
   module TokenAuth
     class Session
-      attr_accessor :site, :name
+      attr_accessor :site
       attr_reader :client_id, :client_secret, :application_id, :access_token, :app_site_id
 
-      def initialize site, name
+      def initialize site
         @site     = site
-        @name     = name
         @logger = defined?(Rails) ? Rails.logger : Logger.new($stdout)
+      end
+
+      def name
+        site.name
       end
 
       def authenticate_with_token(client_id:, client_secret:, application_id:)
