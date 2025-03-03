@@ -8,8 +8,11 @@ module Sharepoint
       attr_accessor :site
       attr_reader :client_id, :client_secret, :application_id, :access_token, :app_site_id
 
-      def initialize site
-        @site     = site
+      def initialize site, client_id, client_secret, application_id
+        @site           = site
+        @client_id      = client_id
+        @client_secret  = client_secret
+        @application_id = application_id
         @logger = defined?(Rails) ? Rails.logger : Logger.new($stdout)
       end
 
@@ -17,7 +20,8 @@ module Sharepoint
         site.name
       end
 
-      def authenticate_with_token(client_id:, client_secret:, application_id:)
+      def authenticate
+
         # Validate required parameters
         validate_params(
           client_id: client_id,
@@ -36,13 +40,15 @@ module Sharepoint
           "grant_type=client_credentials",
           "client_id=#{CGI.escape(client_id)}",
           "client_secret=#{CGI.escape(client_secret)}",
-          "scope=https://graph.microsoft.com/.default"
+          "scope=https://proofgov.sharepoint.com/.default"
+          # "scope=https://proofgov.sharepoint.com/Sites.FullControl.All"
+          # "scope=https://graph.microsoft.com/.default"
         ].join('&')
 
         curl = Curl::Easy.new(url)
         curl.headers['Content-Type'] = 'application/x-www-form-urlencoded'
         curl.post(form_data)
-        
+
         # Check for empty response body
         if curl.body.nil? || curl.body.empty?
           raise SharepointError.new("Empty response received from authentication endpoint")
