@@ -47,9 +47,11 @@ module Sharepoint
         
         # Parse the response to get the access token
         response = JSON.parse(curl.body)
-       
         @access_token = response['access_token']
 
+        if not @access_token
+          raise SharepointError.new("Error response received in authentication: #{response}")
+        end
         url = "https://graph.microsoft.com/v1.0/sites/#{@site.server_url}:/sites/#{@name}"    
 
         
