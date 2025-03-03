@@ -120,22 +120,24 @@ module Sharepoint
       
       
       # Transform URL for token authentication
-      if @session.instance_of?(Sharepoint::TokenAuth::Session)
+      # if @session.instance_of?(Sharepoint::TokenAuth::Session)
 
-        # Transform URL to Graph API format
-       # uri = "https://graph.microsoft.com/v1.0/sites/#{@server_url}:/#{@name}:/#{uri}"
+      #   Transform URL to Graph API format
+      #  uri = "https://graph.microsoft.com/v1.0/sites/#{@server_url}:/#{@name}:/#{uri}"
 
-        if(!uri.empty?)
-          uri = "https://graph.microsoft.com/v1.0/sites/#{@session.app_site_id}/#{uri}"
-        else
-          uri = "https://graph.microsoft.com/v1.0/sites/#{@server_url}:/sites/#{@name}"
-        end
+      #   if(!uri.empty?)
+      #     uri = "https://graph.microsoft.com/v1.0/sites/#{@session.app_site_id}/#{uri}"
+      #   else
+      #     uri = "https://graph.microsoft.com/v1.0/sites/#{@server_url}:/sites/#{name}"
+      #   end
         
 
-      else 
-        uri = if uri =~ /^http/ then uri else api_path(uri) end
+      # else 
+      uri = if uri =~ /^http/ then uri else api_path(uri) end
+
+      puts "Preparing to query '#{uri}'"
         
-      end
+      # end
       arguments = [ uri ]
       arguments << body if method != :get
 
@@ -146,15 +148,15 @@ module Sharepoint
 
           
           
-          if @session.instance_of?(Sharepoint::TokenAuth::Session)
-            # Use correct Accept header for Graph API
-            curl.headers = {
-              "Accept" => "application/json;odata.metadata=minimal",
-              "Connection" => "close",
-              "User-Agent" => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-              "Cache-Control" => "no-cache"
-            }
-          else
+          # if @session.instance_of?(Sharepoint::TokenAuth::Session)
+          #   # Use correct Accept header for Graph API
+          #   curl.headers = {
+          #     "Accept" => "application/json;odata.metadata=minimal",
+          #     "Connection" => "close",
+          #     "User-Agent" => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          #     "Cache-Control" => "no-cache"
+          #   }
+          # else
             # Original headers for SharePoint REST API
             curl.headers = {
               "Cookie" => @session.cookie,
@@ -163,14 +165,14 @@ module Sharepoint
               "User-Agent" => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
               "Cache-Control" => "no-cache"
             }
-          end
+          # end
           
           if method != :get
             curl.headers["Content-Type"] = curl.headers["Accept"]
             if session.instance_of?(Sharepoint::HttpAuth::Session)
               curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
             elsif session.instance_of?(Sharepoint::TokenAuth::Session)
-              curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
+              # curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
               curl.headers["Authorization"] = "Bearer " + session.access_token
             else
               curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
@@ -202,22 +204,22 @@ module Sharepoint
         raise e
       end
 
-      if @session.instance_of?(Sharepoint::TokenAuth::Session)
-        data = JSON.parse result.body_str
-        if data['value']
-          # Filter and format the list items
-          lists = data['value'].map do |item|
-            {
-              name: item['displayName'],
-              type: item['list']['template'],
-              id: item['id'],
-              url: item['webUrl']
-            }
-          end
-        #  puts "Lists found: #{lists.inspect}"
-        end
-        return data
-      else
+      # if @session.instance_of?(Sharepoint::TokenAuth::Session)
+      #   data = JSON.parse result.body_str
+      #   if data['value']
+      #     # Filter and format the list items
+      #     lists = data['value'].map do |item|
+      #       {
+      #         name: item['displayName'],
+      #         type: item['list']['template'],
+      #         id: item['id'],
+      #         url: item['webUrl']
+      #       }
+      #     end
+      #   #  puts "Lists found: #{lists.inspect}"
+      #   end
+      #   return data
+      # else
 
         if !(skip_json || (result.body_str.nil? || result.body_str.empty?))
           begin
@@ -233,7 +235,7 @@ module Sharepoint
           result.body_str
         end
       end
-    end
+    # end
   end
 end
 
