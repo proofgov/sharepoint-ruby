@@ -52,9 +52,8 @@ module Sharepoint
         if not @access_token
           raise SharepointError.new("Error response received in authentication: #{response}")
         end
-        url = "https://graph.microsoft.com/v1.0/sites/#{@site.server_url}:/sites/#{@name}"    
 
-        
+        url = "https://graph.microsoft.com/v1.0/sites/#{@site.server_url}:/sites/#{name.gsub(/^sites\//, '')}"
 
         curl = Curl::Easy.new(url)
         curl.headers['Authorization'] = "Bearer #{@access_token}"
