@@ -4,8 +4,7 @@ require 'sharepoint-error'
 require 'sharepoint-session'
 require 'sharepoint-object'
 require 'sharepoint-types'
-require 'sharepoint-http-auth'
-require 'sharepoint-token-auth'
+require 'sharepoint-entra-auth'
 
 module Sharepoint
   class SPException < SharepointError
@@ -116,126 +115,44 @@ module Sharepoint
     end
 
     def query method, uri, body = nil, skip_json=false, &block
-
-      
-      
-      # Transform URL for token authentication
-      # if @session.instance_of?(Sharepoint::TokenAuth::Session)
-
-      #   Transform URL to Graph API format
-      #  uri = "https://graph.microsoft.com/v1.0/sites/#{@server_url}:/#{@name}:/#{uri}"
-
-      #   if(!uri.empty?)
-      #     uri = "https://graph.microsoft.com/v1.0/sites/#{@session.app_site_id}/#{uri}"
-      #   else
-      #     uri = "https://graph.microsoft.com/v1.0/sites/#{@server_url}:/sites/#{name}"
-      #   end
-        
-
-      # else 
-      uri = if uri =~ /^http/ then uri else api_path(uri) end
-
-      puts "Preparing to query '#{uri}'"
-        
-      # end
-      arguments = [ uri ]
+      uri        = if uri =~ /^http/ then uri else api_path(uri) end
+      arguments  = [ uri ]
       arguments << body if method != :get
-
-
-      
-      begin
-        result = Curl::Easy.send "http_#{method}", *arguments do |curl|
-
-          
-          
-          # if @session.instance_of?(Sharepoint::TokenAuth::Session)
-          #   # Use correct Accept header for Graph API
-          #   curl.headers = {
-          #     "Accept" => "application/json;odata.metadata=minimal",
-          #     "Connection" => "close",
-          #     "User-Agent" => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-          #     "Cache-Control" => "no-cache"
-          #   }
-          # else
-            # Original headers for SharePoint REST API
-            curl.headers = {
-              "Cookie" => @session.cookie,
-              "Accept" => "application/json;odata=verbose",
-              "Connection" => "close",
-              "User-Agent" => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-              "Cache-Control" => "no-cache"
-            }
-          # end
-          
-          if method != :get
-            curl.headers["Content-Type"] = curl.headers["Accept"]
-            if session.instance_of?(Sharepoint::HttpAuth::Session)
-              curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
-            elsif session.instance_of?(Sharepoint::TokenAuth::Session)
-              # curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
-              curl.headers["Authorization"] = "Bearer " + session.access_token
-            else
-              curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
-              curl.headers["Authorization"] = "Bearer " + form_digest unless @getting_form_digest == true
-            end
-          end
-
-          
-          curl.timeout = 60
-          curl.connect_timeout = 30
-          curl.follow_location = true
-          curl.ssl_verify_peer = false
-          
-          if @session.methods.include? :curl
-            @session.send :curl, curl
-          end
-          
-          block.call curl unless block.nil?
+      result = Curl::Easy.send "http_#{method}", *arguments do |curl|
+        curl.headers["Cookie"]          = @session.cookie
+        curl.headers["Accept"]          = "application/json;odata=verbose"
+        if session.instance_of?(Sharepoint::EntraAuth::Session)
+          curl.headers["Authorization"] = "Bearer " + session.access_token
         end
-        
-
-      rescue Curl::Err::RecvError => e
-        puts "\n=== Curl Receive Error ==="
-        puts "Error: #{e.class} - #{e.message}"
-        raise SharepointError.new("Failed to receive response: #{e.message}")
-      rescue => e
-        puts "\n=== Unexpected Error ==="
-        puts "Error: #{e.class} - #{e.message}"
-        raise e
-      end
-
-      # if @session.instance_of?(Sharepoint::TokenAuth::Session)
-      #   data = JSON.parse result.body_str
-      #   if data['value']
-      #     # Filter and format the list items
-      #     lists = data['value'].map do |item|
-      #       {
-      #         name: item['displayName'],
-      #         type: item['list']['template'],
-      #         id: item['id'],
-      #         url: item['webUrl']
-      #       }
-      #     end
-      #   #  puts "Lists found: #{lists.inspect}"
-      #   end
-      #   return data
-      # else
-
-        if !(skip_json || (result.body_str.nil? || result.body_str.empty?))
-          begin
-            data = JSON.parse result.body_str
-            raise Sharepoint::SPException.new data, uri, body unless data['error'].nil?
-            self.class.make_object_from_response self, data
-          rescue JSON::ParserError => e
-            raise SharepointError.new("Exception with body=#{body}, e=#{e.inspect}, #{e.backtrace.inspect}, response=#{result.body_str}")
+        if method != :get
+          curl.headers["Content-Type"]    = curl.headers["Accept"]
+          if session.instance_of?(Sharepoint::HttpAuth::Session)
+            curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
+          elsif session.instance_of?(Sharepoint::EntraAuth::Session)
+            curl.headers["Authorization"] = "Bearer " + session.access_token
+          else
+            curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
+            curl.headers["Authorization"] = "Bearer " + form_digest unless @getting_form_digest == true
           end
-        elsif result.status.to_i >= 400
-          raise SharepointError.new("#{method.to_s.upcase} #{uri} responded with #{result.status}")
-        else
-          result.body_str
         end
+        curl.verbose = @verbose
+        @session.send :curl, curl unless not @session.methods.include? :curl
+        block.call curl           unless block.nil?
       end
-    # end
+      if !(skip_json || (result.body_str.nil? || result.body_str.empty?))
+        begin
+          data = JSON.parse result.body_str
+          raise Sharepoint::SPException.new data, uri, body unless data['error'].nil?
+          self.class.make_object_from_response self, data
+        rescue JSON::ParserError => e
+          raise SharepointError.new("Exception with body=#{body}, e=#{e.inspect}, #{e.backtrace.inspect}, response=#{result.body_str}")
+        end
+      elsif result.status.to_i >= 400
+        raise SharepointError.new("#{method.to_s.upcase} #{uri} responded with #{result.status}")
+      else
+        result.body_str
+      end
+    end
   end
 end
 
