@@ -16,6 +16,8 @@ Gem::Specification.new do |s|
   s.metadata['source_code_uri'] = 'https://github.com/proofgov/sharepoint-ruby'
   s.metadata['changelog_uri'] = 'https://github.com/proofgov/sharepoint-ruby/blob/master/CHANGELOG.md'
 
+  s.add_runtime_dependency('jwt', '~>2')
+
   s.require_path = 'lib'
   s.files = Dir.chdir(File.expand_path(__dir__)) do
     `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
