@@ -4,6 +4,7 @@ require 'sharepoint-error'
 require 'sharepoint-session'
 require 'sharepoint-object'
 require 'sharepoint-types'
+require 'sharepoint-entra-auth'
 
 module Sharepoint
   class SPException < SharepointError
@@ -120,10 +121,15 @@ module Sharepoint
       result = Curl::Easy.send "http_#{method}", *arguments do |curl|
         curl.headers["Cookie"]          = @session.cookie
         curl.headers["Accept"]          = "application/json;odata=verbose"
+        if session.instance_of?(Sharepoint::EntraAuth::Session)
+          curl.headers["Authorization"] = "Bearer " + session.access_token
+        end
         if method != :get
           curl.headers["Content-Type"]    = curl.headers["Accept"]
           if session.instance_of?(Sharepoint::HttpAuth::Session)
             curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
+          elsif session.instance_of?(Sharepoint::EntraAuth::Session)
+            curl.headers["Authorization"] = "Bearer " + session.access_token
           else
             curl.headers["X-RequestDigest"] = form_digest unless @getting_form_digest == true
             curl.headers["Authorization"] = "Bearer " + form_digest unless @getting_form_digest == true

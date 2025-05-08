@@ -8,11 +8,11 @@ module Sharepoint
       attr_reader :user, :password
 
       def initialize site
-        @site     = site
+        @site = site
       end
 
       def authenticate user, password
-        @user     = user
+        @user = user
         @password = password
       end
 
@@ -22,8 +22,8 @@ module Sharepoint
 
       def curl curb
         curb.http_auth_types = :ntlm
-        curb.username        = @user
-        curb.password        = @password
+        curb.username = @user
+        curb.password = @password
       end
     end
   end

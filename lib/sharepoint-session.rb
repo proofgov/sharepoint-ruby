@@ -36,6 +36,7 @@ module Sharepoint
     end
 
     attr_accessor :site
+    attr_accessor :oauth_token
 
     def initialize site
       @site = site
